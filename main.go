@@ -61,10 +61,10 @@ func getColorAt(x, y int) (color.RGBA, error) {
 
 func printColor(r, g, b uint8, char string) {
     fmt.Printf("\033[38;2;%d;%d;%dm%s\033[0m", r, g, b, char)
-}
+
 
 func main() {
-	interval   := 100 * time.Millisecond
+	interval   := 50 * time.Millisecond
 	posX, posY := 100, 100
 	
 	wledIP := "x.x.x.x"
@@ -76,7 +76,7 @@ func main() {
 		} else {
 			printColor(clr.R, clr.G, clr.B, fmt.Sprintf("█ R=%d G=%d B=%d\n", clr.R, clr.G, clr.B ))
 
-			if err := sendToWLED(wledIP, int(clr.R), int(clr.B), int(clr.G)); err != nil {
+			if err := sendToWLED(wledIP, int(clr.R), int(clr.G), int(clr.B)); err != nil {
         		fmt.Println("Error sending request:", err)
     		}
 		}

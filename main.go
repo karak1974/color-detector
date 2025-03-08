@@ -12,35 +12,40 @@ import (
 )
 
 type WLEDState struct {
-    On  bool  `json:"on"`
-    Bri uint8 `json:"bri"`
-    R   uint8 `json:"r"`
-    G   uint8 `json:"g"`
-    B   uint8 `json:"b"`
+	On  bool `json:"on"`
+	Seg []struct {
+		Col [][]int `json:"col"`
+	} `json:"seg"`
 }
 
-func sendToWLED(ip string, state WLEDState) error {
-    url := fmt.Sprintf("http://%s/json/state", ip)
-    jsonData, err := json.Marshal(state)
-    if err != nil {
-        return err
-    }
+func sendToWLED(ip string, r, g, b int) error {
+	url := fmt.Sprintf("http://%s/json/state", ip)
 
-    req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-    if err != nil {
-        return err
-    }
-    req.Header.Set("Content-Type", "application/json")
+	state := WLEDState{
+		On: true,
+		Seg: []struct {
+			Col [][]int `json:"col"`
+		}{
+			{Col: [][]int{{r, g, b}}},
+		},
+	}
 
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
+	jsonData, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
 
-    fmt.Println("Response Status:", resp.Status)
-    return nil
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to set color, status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func getColorAt(x, y int) (color.RGBA, error) {
@@ -71,15 +76,7 @@ func main() {
 		} else {
 			printColor(clr.R, clr.G, clr.B, fmt.Sprintf("█ R=%d G=%d B=%d\n", clr.R, clr.G, clr.B ))
 
-			state := WLEDState{
-        		On:  true,
-        		Bri: 255,
-        		R:   clr.R,
-        		G:   clr.G,
-        		B:   clr.B,
-    		}
-
-    		if err := sendToWLED(wledIP, state); err != nil {
+			if err := sendToWLED(wledIP, int(clr.R), int(clr.B), int(clr.G)); err != nil {
         		fmt.Println("Error sending request:", err)
     		}
 		}
